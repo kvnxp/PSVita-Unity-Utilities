@@ -17,6 +17,7 @@ namespace PSVitaUtilities.Settings
         bool showProjectSettings = true;
 
         #region Settings
+        
         public static string PSVitaIP;
         public static string FTPLocation;
         public static string USBDriveLetter;
@@ -57,7 +58,8 @@ namespace PSVitaUtilities.Settings
             set
             {
                 string[] temp = PlayerSettings.PSVita.contentID.Split('-', '_');
-                PlayerSettings.PSVita.contentID = temp[0] + "-" + value + "_" + temp[2] + "-" + temp[3];
+                string contentID = temp[0] + "-" + value + "_" + temp[2] + "-" + temp[3];
+                PlayerSettings.PSVita.contentID = contentID;
             }
         }
         //public static PlayerSettings.PSVita.PSVitaPowerMode PowerMode
@@ -89,6 +91,7 @@ namespace PSVitaUtilities.Settings
             #region Initialisation
             if (!Loaded)
             {
+                Debug.Log("Loading Vita Settings");
                 LoadSettings();
                 Loaded = true;
             }
