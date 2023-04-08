@@ -14,10 +14,20 @@ using System.Security.Cryptography;
 namespace PSVitaUtilities.Building
 {
     public class BuildVPK : EditorWindow
-    {   
-        public static string psvitaMenu= "PSVita";
+    {
+        public static string psvitaMenu = "PSVita";
         static string buildType = "";
         static string buildCache = Application.dataPath.TrimEnd("Assets".ToCharArray()) + "/Build/BuildCache";
+
+        [MenuItem("PSVita/MainMenu %&b", false, -2)]
+        public static void BuildMenu()
+        {
+
+            var MainMenu = EditorWindow.GetWindow(typeof(BuildSystemMenu), true, "PSVita Build Menu", true);
+            MainMenu.position = new Rect(Screen.width * 0.4f, 300, 300, 300);
+            MainMenu.Show();
+
+        }
 
         #region Build Functions
         [MenuItem("PSVita/Build/Build VPK", false, -1)]
@@ -43,23 +53,25 @@ namespace PSVitaUtilities.Building
         }
 
         [MenuItem("PSVita/Upload_Build_Folder")]
-        public static void uploadFolder(){
+        public static void uploadFolder()
+        {
             PSVitaUtilitiesSettings.LoadSettings();
             string BuildPath = Application.dataPath.TrimEnd("Assets".ToCharArray()) + "/Build/TempBuild";
-            if (!Directory.Exists(BuildPath)){
-                 Debug.Log("no directory found");
-                 return;
+            if (!Directory.Exists(BuildPath))
+            {
+                Debug.Log("no directory found");
+                return;
             }
-            TransferFolder(BuildPath,PSVitaUtilitiesSettings.TitleID);
+            TransferFolder(BuildPath, PSVitaUtilitiesSettings.TitleID);
         }
 
         [MenuItem("PSVita/Build/USB/Build and Send VPK (WIP)")]
         public static void BuildGameUSB(string psvitaMenu) => BuildGame(BuildMode.USB);
 
-        //[MenuItem("PSVita/Build/USB/Build and Run (WIP)")]
+        [MenuItem("PSVita/Build/USB/Build and Run (WIP)")]
         public static void BuildGameUSBRun() => BuildGame(BuildMode.USBRun);
 
-        //[MenuItem("PSVita/Build/Emulator/Build and Transfer")]
+        [MenuItem("PSVita/Build/Emulator/Build and Transfer")]
         public static void BuildEmuTransfer() => BuildGame(BuildMode.EmuTransfer);
 
         public static void BuildGame(BuildMode buildMode)
@@ -92,6 +104,9 @@ namespace PSVitaUtilities.Building
                     break;
                 case BuildMode.FTPTransfer:
                     buildType = "FTP Build Transfer";
+                    break;
+                case BuildMode.onlyBuild:
+                    buildType = "Build a VPK";
                     break;
             }
             #endregion
@@ -197,6 +212,17 @@ namespace PSVitaUtilities.Building
                 DateTime startTransferTime = DateTime.Now;
 
                 #region FTP - Send to Vita
+
+
+                if (buildMode == BuildMode.onlyBuild)
+                {
+                    filePath = Application.dataPath.TrimEnd("Assets".ToCharArray()) + "/Build/" + PlayerSettings.productName + ".vpk";
+                    Error = $"{buildType} Failed (Network Error: Failed to transfer Build)";
+                    string productName = PlayerSettings.productName;
+                    EditorUtility.DisplayProgressBar("Building", "Transfering " + productName + ".vpk", 6f / 7f);
+                }
+
+
                 if (buildMode == BuildMode.FTP)
                 {
                     Error = $"{buildType} Failed (Network Error: Failed to transfer Build)";
@@ -496,7 +522,7 @@ namespace PSVitaUtilities.Building
             ZipFile.CreateFromDirectory(_buildPath, _filePath);
         }
 
-        private static void TransferFTPVPK(string _filePath)
+        public static void TransferFTPVPK(string _filePath)
         {
 
             Debug.Log("Prepraring to upload file");
@@ -507,7 +533,7 @@ namespace PSVitaUtilities.Building
             WebClient client = new WebClient();
             bool done = false;
 
-            Thread a = new Thread( () =>
+            Thread a = new Thread(() =>
             {
                 try
                 {
@@ -523,7 +549,7 @@ namespace PSVitaUtilities.Building
             a.IsBackground = true;
             a.Start();
         }
-       
+
         private static void TransferFolder(string _filePath, string _ip)
         {
             _ip = "ftp://" + PSVitaUtilitiesSettings.PSVitaIP + ":1337/ux0:/app/" + _ip;
@@ -552,7 +578,7 @@ namespace PSVitaUtilities.Building
                     catch
                     {
                         retry++;
-                        EditorUtility.DisplayProgressBar("Error","Error to upload",100);
+                        EditorUtility.DisplayProgressBar("Error", "Error to upload", 100);
                         Debug.LogError("Network Error on " + fileBeingTransferred);
                         error.Add(i);
                     }
@@ -647,6 +673,70 @@ namespace PSVitaUtilities.Building
         #endregion
     }
 
+
+    public class BuildSystemMenu : EditorWindow
+    {
+
+        List<GUILayoutOption> styles = new List<GUILayoutOption>();
+        string filePath;
+        void OnEnable()
+        {
+            filePath = Application.dataPath.TrimEnd("Assets".ToCharArray()) + "/Build/" + PlayerSettings.productName + ".vpk";
+        }
+        void OnGUI()
+        {
+
+            styles.Add(GUILayout.Width(120));
+            styles.Add(GUILayout.Height(50));
+
+            EditorGUILayout.BeginVertical();
+
+            EditorGUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Build VPK", styles.ToArray()))
+            {
+                BuildVPK.BuildGame(BuildMode.onlyBuild);
+
+                //    BuildGame(BuildMode.FTP);
+            }
+            if (GUILayout.Button("Build and transfer ", styles.ToArray()))
+            {
+                BuildVPK.BuildGame(BuildMode.FTP);
+
+                // BuildGame(BuildMode.FTP);
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Upload Vpk", styles.ToArray()))
+            {
+                PSVitaUtilitiesSettings.LoadSettings();
+
+                if (!File.Exists(filePath))
+                {
+                    filePath = EditorUtility.OpenFilePanel("Open File VPK", "", "vpk");
+                    String filename = Path.GetFileName(filePath);
+                }
+
+                BuildVPK.TransferFTPVPK(filePath);
+            }
+            if (GUILayout.Button("Transfer Folder", styles.ToArray()))
+            {
+                Debug.Log("build VPK");
+            }
+            EditorGUILayout.EndHorizontal();
+
+            if (GUILayout.Button("Settings", styles.ToArray()))
+            {
+                PSVitaUtilitiesSettings.StartWindow();
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+    }
+
     struct FileFTPData
     {
         public string Name;
@@ -661,7 +751,8 @@ namespace PSVitaUtilities.Building
         Run = 3,
         USB = 4,
         USBRun = 5,
-        EmuTransfer = 6
+        EmuTransfer = 6,
+        onlyBuild = 7
     }
 
     [System.Serializable]
