@@ -1,6 +1,7 @@
 # PSVita Unity Utilities
 
 Tools to help speed up PSVita Unity Development
+( Restructuring Code - no all features are work - 10% progress) 
 
 ## Features
 
