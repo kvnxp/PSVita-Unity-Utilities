@@ -32,6 +32,7 @@ namespace PSVitaUtilities.Settings
         Vector2 scrollPos;
         //public PlayerSettings.PSVita.PSVitaPowerMode PowerMode = PlayerSettings.PSVita.PSVitaPowerMode.ModeA;
 
+
         public static string DeveloperName
         {
             get { return PlayerSettings.companyName; }
@@ -70,7 +71,6 @@ namespace PSVitaUtilities.Settings
         #endregion
 
         #region Creating Editor Window
-        [MenuItem("PSVita/Settings")]
         public static void StartWindow()
         {
             buildCache = Application.dataPath.TrimEnd("Assets".ToCharArray()) + "/Build/BuildCache";
